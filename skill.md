@@ -21,6 +21,20 @@ This skill is stack-agnostic: it assumes a React app with client-side routing
 state held in a provider. Adjust the import paths and hook names below to match
 the project you are in.
 
+## Reach — which agents can use this
+
+`document.modelContext` is the W3C WebMCP draft. Today it only exists in
+Chrome 149+ behind `chrome://flags/#enable-webmcp-testing` (or
+`--enable-features=WebMCP`), reached via `chrome-devtools-mcp`. This is the
+right target long-term and the code you write here is spec-aligned.
+
+If you need it working **now** in an arbitrary MCP client (Claude Desktop, etc.)
+with no browser flag, that needs the older script-tag + relay-server + token
+pairing approach (`jasonjmcghee/WebMCP`, `@jason.today/webmcp`). It is **not**
+spec-compliant and the author now points people at the W3C spec — don't build
+on it unless the "works today, any client" constraint is hard. This skill does
+not cover it.
+
 ## The one rule that bites
 
 `use-webmcp-tool`'s `useWebMCP` registers each tool **once** and does **not**
@@ -61,12 +75,19 @@ Read live state through, in order of preference:
      `navigate` comes from the project's router.
    - One `useWebMCP({ name, description, inputSchema, annotations, execute })`
      per tool. `annotations: { readOnlyHint: true }` for reads,
-     `{ readOnlyHint: false }` for writes.
+     `{ readOnlyHint: false }` for writes. Add `untrustedContentHint: true` on
+     any read that returns user-generated text (reviews, seller descriptions,
+     Q&A) so the agent treats it as untrusted.
    - `execute` reads `cartBridge.current` / static data only. After a mutation,
      `await new Promise(r => setTimeout(r, 30))` before returning a cart
      snapshot so it reflects the scheduled state update.
    - Throw `Error` with a helpful message for bad input (unknown slug/variant);
-     the agent sees it.
+     the agent sees it. Optional `onError` for logging, `formatOutput` to shape
+     the result before MCP normalization.
+   - `useWebMCP` re-registers on `name`/`inputSchema` changes but **not** on
+     `execute` changes (hence the bridge). Pass `enabled: false` to
+     conditionally drop a tool; `supported`/`registered`/`error` come back for
+     diagnostics.
 
 5. **Mount once** — inside the state provider and within the router context,
    render `<WebMCPTools />` (the root layout is usually the right place).

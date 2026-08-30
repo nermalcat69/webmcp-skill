@@ -16,6 +16,12 @@ callbacks read live state through module-level refs instead of closing over Reac
 It is stack-agnostic: assumes a React app with client-side routing and cart state in a
 provider. You adjust import paths and hook names to fit your project.
 
+Targets the native W3C `document.modelContext` API via
+[`use-webmcp-tool`](https://github.com/GoogleChromeLabs/use-webmcp-tool), which today
+means Chrome 149+ behind a flag. The skill notes the older script-tag + relay approach
+([`jasonjmcghee/WebMCP`](https://github.com/jasonjmcghee/WebMCP)) as the "works in any
+MCP client today" alternative but does not implement it.
+
 ## Install
 
 Copy `skill.md` into your skills directory:
